@@ -39,11 +39,20 @@ defmodule Algolia do
       raise MissingAPIKeyError
   end
 
-  defp host(:read, 0), do: "#{application_id()}-dsn.algolia.net"
-  defp host(:write, 0), do: "#{application_id()}.algolia.net"
+  defp host(:read, 0) do
+    System.get_env("ALGOLIA_HOST") || Application.get_env(:algolia, :host) ||
+      "https://#{application_id()}-dsn.algolia.net"
+  end
 
-  defp host(_read_or_write, curr_retry) when curr_retry <= 3,
-    do: "#{application_id()}-#{curr_retry}.algolianet.com"
+  defp host(:write, 0) do
+    System.get_env("ALGOLIA_HOST") || Application.get_env(:algolia, :host) ||
+      "https://#{application_id()}.algolia.net"
+  end
+
+  defp host(_read_or_write, curr_retry) when curr_retry <= 3 do
+    System.get_env("ALGOLIA_HOST") || Application.get_env(:algolia, :host) ||
+      "https://#{application_id()}-#{curr_retry}.algolianet.com"
+  end
 
   @doc """
   Multiple queries
@@ -178,8 +187,7 @@ defmodule Algolia do
   end
 
   defp request_url(read_or_write, retry, path) do
-    "https://"
-    |> Path.join(host(read_or_write, retry))
+    host(read_or_write, retry)
     |> Path.join(path)
   end
 
